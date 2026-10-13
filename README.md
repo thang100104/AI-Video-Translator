@@ -4,6 +4,46 @@
 
 Giao diện dashboard navy, tím và xanh dương, đồng nhất ở 5 trang: **Tổng quan, Dịch video, Lịch sử, Giọng đọc AI, Cài đặt**. Số liệu lấy từ SQLite và trạng thái FastAPI. Không dùng dữ liệu giả để báo thành công. Có đăng ký, đăng nhập và đăng xuất thật; tài khoản và phiên đăng nhập lưu trong SQLite. Mỗi tài khoản có lịch sử video riêng.
 
+## Triển khai frontend lên Render Static Site
+
+Frontend giữ React, Vite, Tailwind và các trang hiện có. `npm run build` xuất vào `frontend/dist`; Render phục vụ thư mục này bằng HTTPS, mở được trên điện thoại qua URL công khai mà không cần bật máy tính cá nhân. Static Site chỉ phục vụ giao diện; không chạy FastAPI, SQLite, Whisper hay FFmpeg. Backend chưa triển khai thì chưa thể đăng nhập, tải lịch sử hoặc dịch video. Không có kết quả dịch giả.
+
+Đã thêm Blueprint `render.yaml` ở thư mục gốc. Có thể dùng **New → Blueprint** sau khi mã nguồn được đưa lên GitHub, hoặc tạo **New → Static Site** thủ công với cấu hình:
+
+| Mục | Giá trị |
+| --- | --- |
+| Root Directory | `frontend` |
+| Build Command | `npm ci && npm run build` |
+| Publish Directory | `dist` |
+| Environment | `NODE_VERSION=22` |
+| Backend API | `VITE_API_BASE=https://api.example.com` (thay bằng backend thật) |
+| Redirects/Rewrites | Source `/*`, Destination `/index.html`, Action **Rewrite** |
+| Auto Deploy | **Off** để chủ động kiểm tra rồi triển khai |
+
+Render Static Site có hosting miễn phí và HTTPS do Render cung cấp; xem [Static Sites](https://render.com/docs/static-sites). Quy tắc SPA fallback đã có trong Blueprint; nếu tạo thủ công phải thêm trong Dashboard theo [Redirects and Rewrites](https://render.com/docs/redirects-rewrites). Rewrite giữ nguyên URL khi tải lại các đường dẫn; không tạo thêm trang mới. Các trang dashboard hiện được chọn bằng state React, nên tải lại vẫn theo hành vi ban đầu của ứng dụng.
+
+`VITE_API_BASE` là **origin HTTPS của backend**, không thêm `/api`, query hay thông tin đăng nhập. Các yêu cầu API, upload, nghe thử và URL video đều dùng origin này. Biến được nhúng vào JavaScript lúc build: đổi giá trị phải build/deploy lại. Không đưa khóa AI, PayOS hay bí mật khác vào biến `VITE_*`. Local vẫn để trống biến và dùng proxy Vite tới cổng 8000; proxy này không tồn tại trên Static Site.
+
+Khi chưa có backend, có thể để `VITE_API_BASE` trống để triển khai giao diện; ứng dụng sẽ hiện thông báo **Backend chưa được cấu hình** cùng nút kết nối lại. Blueprint hỏi giá trị biến khi tạo mới; nếu chưa có URL thật, tạo Static Site thủ công và bỏ biến này. URL sai, HTTP hoặc localhost bị chặn trong frontend production. Không điền một backend ví dụ rồi coi là đã kết nối thành công.
+
+Khi backend HTTPS đã sẵn sàng, cấu hình phía backend riêng:
+
+- `CORS_ORIGINS` phải chứa chính xác origin frontend (ví dụ `https://translator.example.com`), không dấu `/` cuối; backend kiểm tra Origin cho thao tác ghi và cho phép credentials.
+- Bật `SESSION_SECURE_COOKIE=true`. Cookie hiện dùng `SameSite=Strict`: để giữ cơ chế đăng nhập hiện tại, nên dùng frontend và backend cùng site, ví dụ `https://translator.example.com` và `https://api.example.com`. Hai địa chỉ `*.onrender.com` riêng không bảo đảm cùng site; chỉ cấu hình CORS chưa đủ. Nếu triển khai khác site, cần xử lý cookie/CSRF ở backend riêng và kiểm tra chính sách cookie trên trình duyệt điện thoại.
+- Cấu hình `BILLING_FRONTEND_URL` theo URL frontend thật nếu dùng PayOS.
+- SQLite, tài khoản và lịch sử vẫn nằm ở backend hiện tại; upload frontend lên Render không tự sao chép hay thay đổi dữ liệu này.
+
+Kiểm tra trước khi đưa mã nguồn lên GitHub:
+
+```bash
+cd frontend
+npm ci
+npm run build
+npm run preview
+```
+
+Mở bản preview để kiểm tra giao diện. Sau khi triển khai thật, mở URL HTTPS trên điện thoại và tải lại đường dẫn để kiểm tra rewrite trên Render. Khi có backend thật, kiểm tra đăng nhập, upload, nghe thử và lịch sử. Không chạy test backend trên SQLite đang dùng chỉ để kiểm tra static build.
+
 ## Chạy trên workspace hiện tại
 
 Đã tạo venv Python **3.11.17** trong `backend/.venv`, cài đủ requirements, FFmpeg Intel trong `backend/.tools` và tải model Whisper `base` vào `backend/.models`. Những thư mục này không được commit. Venv Python 3.14 cũ giữ ở `backend/.venv-python314`. App tự tìm FFmpeg trong `.tools` trước khi dùng PATH. Khi ffprobe không có, PyAV đọc codec/thời lượng.
