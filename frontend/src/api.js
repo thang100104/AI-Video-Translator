@@ -10,6 +10,10 @@ function checkApiConfig() {
     throw new Error('VITE_API_BASE phải là địa chỉ gốc HTTPS của backend công khai, không dùng localhost hoặc thêm /api.');
   }
 }
+export const API_CONFIG_ERROR = (() => { try { checkApiConfig(); return ''; } catch (error) { return error.message; } })();
+// Local development keeps the existing Vite proxy; deployed builds need an API origin.
+export const PREVIEW_ONLY = Boolean(API_CONFIG_ERROR);
+export const PREVIEW_REASON = 'Backend chưa được kết nối. Kết nối backend để tải lên, dịch, nghe thử, xuất video và lưu cấu hình.';
 export const apiUrl = path => { checkApiConfig(); return API_BASE + path; };
 export async function api(path, options = {}) {
   const url = apiUrl(path);

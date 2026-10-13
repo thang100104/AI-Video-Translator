@@ -6,7 +6,7 @@ Giao diện dashboard navy, tím và xanh dương, đồng nhất ở 5 trang: *
 
 ## Triển khai frontend lên Render Static Site
 
-Frontend giữ React, Vite, Tailwind và các trang hiện có. `npm run build` xuất vào `frontend/dist`; Render phục vụ thư mục này bằng HTTPS, mở được trên điện thoại qua URL công khai mà không cần bật máy tính cá nhân. Static Site chỉ phục vụ giao diện; không chạy FastAPI, SQLite, Whisper hay FFmpeg. Backend chưa triển khai thì chưa thể đăng nhập, tải lịch sử hoặc dịch video. Không có kết quả dịch giả.
+Frontend giữ React, Vite, Tailwind và các trang hiện có. `npm run build` xuất vào `frontend/dist`; Render phục vụ thư mục này bằng HTTPS, mở được trên điện thoại qua URL công khai mà không cần bật máy tính cá nhân. Static Site chỉ phục vụ giao diện; không chạy FastAPI, SQLite, Whisper hay FFmpeg. Backend chưa triển khai vẫn xem được các trang Tổng quan, Dịch video, Lịch sử, Giọng đọc AI và Cài đặt; chưa thể đăng nhập, tải lịch sử hoặc dịch video. Không có kết quả dịch giả.
 
 Đã thêm Blueprint `render.yaml` ở thư mục gốc. Có thể dùng **New → Blueprint** sau khi mã nguồn được đưa lên GitHub, hoặc tạo **New → Static Site** thủ công với cấu hình:
 
@@ -24,7 +24,7 @@ Render Static Site có hosting miễn phí và HTTPS do Render cung cấp; xem [
 
 `VITE_API_BASE` là **origin HTTPS của backend**, không thêm `/api`, query hay thông tin đăng nhập. Các yêu cầu API, upload, nghe thử và URL video đều dùng origin này. Biến được nhúng vào JavaScript lúc build: đổi giá trị phải build/deploy lại. Không đưa khóa AI, PayOS hay bí mật khác vào biến `VITE_*`. Local vẫn để trống biến và dùng proxy Vite tới cổng 8000; proxy này không tồn tại trên Static Site.
 
-Khi chưa có backend, có thể để `VITE_API_BASE` trống để triển khai giao diện; ứng dụng sẽ hiện thông báo **Backend chưa được cấu hình** cùng nút kết nối lại. Blueprint hỏi giá trị biến khi tạo mới; nếu chưa có URL thật, tạo Static Site thủ công và bỏ biến này. URL sai, HTTP hoặc localhost bị chặn trong frontend production. Không điền một backend ví dụ rồi coi là đã kết nối thành công.
+Khi chưa có backend, có thể để `VITE_API_BASE` trống để triển khai giao diện; ứng dụng mở giao diện với thông báo **Chế độ xem trước – Backend chưa được kết nối**. Không gọi API hoặc tạo dữ liệu giả; thống kê hiển thị dấu “—”, lịch sử trống. Có thể chọn video để xem cục bộ và thử các lựa chọn giao diện, nhưng dịch, nghe thử TTS, xuất, lưu cấu hình và thanh toán đều bị khóa kèm lý do. Thiết lập hiển thị là giá trị mặc định của giao diện, chưa được tải từ backend. Blueprint hỏi giá trị biến khi tạo mới; nếu chưa có URL thật, tạo Static Site thủ công và bỏ biến này. URL sai, HTTP hoặc localhost bị chặn trong frontend production. Không điền một backend ví dụ rồi coi là đã kết nối thành công.
 
 Khi backend HTTPS đã sẵn sàng, cấu hình phía backend riêng:
 
@@ -234,3 +234,5 @@ MAX_UPLOAD_MB=1024
 Đơn lưu số tiền/thời hạn tại lúc tạo. Một tài khoản chỉ có một đơn đang tạo/chờ; nhấn lại sử dụng cùng đơn. Giao dịch trùng hoặc webhook gửi lại không cộng thời hạn hai lần. Đơn và video của tài khoản khác không truy cập được. Khi lỗi mạng lúc tạo, giữ đơn để đối soát, tránh tạo đơn thứ hai có thể bị thu tiền hai lần. Nếu PayOS xác nhận đơn chưa được tạo và API đối soát không tìm thấy, quản trị viên cần kiểm tra trên PayOS và xử lý đơn `creating` trước khi tạo lại; không tự giả định thanh toán thất bại.
 
 **Đã kiểm tra:** backend với gateway mock trong tests, chữ ký, đủ tiền, quyền Free/Pro, chống cấp quyền trùng, cách ly tài khoản và build giao diện. **Chưa kiểm tra giao dịch tiền thật:** cần ba khóa PayOS, tài khoản/kênh đã xác minh và chuyển khoản thực tế. Không có khóa nào được ghi sẵn trong mã nguồn.
+
+Kiểm tra chế độ xem trước không cần backend (sau `npm run build`, tại `frontend`): `npx playwright test --config playwright.preview.config.js`. Kiểm tra các trang, thao tác bị khóa, không gọi API và chiều rộng 375/390/430 px của iPhone cùng desktop.
